@@ -3,7 +3,7 @@ from typing import List
 
 import nextcord
 import nextwave
-from nextcord.ext import commands
+from nextcord.ext import application_checks, commands
 
 from ..config import PLAYLIST_URL
 
@@ -33,12 +33,16 @@ class ExtendedList:
 def get_random_track(
     tracks: List[nextwave.YouTubeTrack], extended: ExtendedList
 ) -> nextwave.YouTubeTrack:
-    for track in tracks:
-        if track in extended():
-            tracks.remove(track)
+    for song in tracks:
+        if song in extended():
+            tracks.remove(song)
 
-    track_number = randint(0, len(tracks))
-    track = tracks[track_number]
+    track_number = randint(0, len(tracks) - 1)
+    try:
+        track = tracks[track_number]
+    except Exception as err:
+        print(err)
+
     extended.add(track)
 
     return track
@@ -49,7 +53,7 @@ class Player(commands.Cog):
         self.bot = client
 
         self.bot.loop.create_task(self.connect_nodes())
-        self.extended = ExtendedList(5)
+        self.extended = ExtendedList(15)
 
     async def connect_nodes(self):
         """Connect to our Lavalink nodes."""
@@ -57,9 +61,9 @@ class Player(commands.Cog):
 
         await nextwave.NodePool.create_node(
             bot=self.bot,
-            host="lavalinkinc.ml",
+            host="www.lavalinknodepublic.ml",
             port=443,
-            password="incognito",
+            password="mrextinctcodes",
             https=True,
         )
 
@@ -70,17 +74,18 @@ class Player(commands.Cog):
         track: nextwave.Track,
         reason: str,
     ):
-        await self.play_mus()
+        await self.play_mus(player)
 
-    async def play_mus(self):
-        if not self.vp.is_playing():
+    async def play_mus(self, player: nextwave.Player):
+        if not player.is_playing():
             playlist: nextwave.YouTubePlaylist
             playlist = await nextwave.YouTubeTrack.search(query=PLAYLIST_URL)
 
             track = get_random_track(playlist.tracks, self.extended)
+            print(track.title, track.uri)
 
             try:
-                await self.vp.play(track)
+                await player.play(track)
             except Exception as err:
                 print(err)
 
@@ -89,6 +94,7 @@ class Player(commands.Cog):
         """Event fired when a node has finished connecting."""
         print(f"Node: <{node.identifier}> is ready!")
 
+    @application_checks.has_guild_permissions(administrator=True)
     @nextcord.slash_command(name="join", description="Бот начинает играть")
     async def join(self, inter: nextcord.Interaction):
         if inter.user.voice is None:
@@ -98,7 +104,7 @@ class Player(commands.Cog):
             return await inter.send(embed=emb)
 
         if not inter.guild.voice_client:
-            self.vp: nextwave.Player = await inter.user.voice.channel.connect(
+            vp: nextwave.Player = await inter.user.voice.channel.connect(
                 cls=nextwave.Player,
                 reconnect=True,
             )
@@ -110,11 +116,14 @@ class Player(commands.Cog):
                 )
             )
 
-            await self.play_mus()
-        else:
-            await self.vp.move_to(inter.user.voice.channel)
-            self.vp: nextwave.Player = inter.guild.voice_client
+            await self.play_mus(vp)
 
+        else:
+            await inter.guild.voice_client.move_to(
+                inter.user.voice.channel,
+            )
+
+    @application_checks.has_guild_permissions(administrator=True)
     @nextcord.slash_command(name="leave", description="Бот выходит из канала")
     async def leave(self, interaction: nextcord.Interaction):
         if interaction.guild.voice_client is None:
@@ -125,10 +134,8 @@ class Player(commands.Cog):
                 )
             )
 
-        await self.vp.stop()
+        await interaction.guild.voice_client.stop()
         await interaction.guild.voice_client.disconnect()
-
-        self.is_playing = False
 
         await interaction.send(
             embed=nextcord.Embed(
