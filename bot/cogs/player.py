@@ -17,12 +17,16 @@ class ExtendedList:
     def add(self, element) -> bool:
         try:
             if len(self.extend_list) >= self.size:
+                print(1)
                 for _ in range(0, len(self.extend_list) - self.size + 1):
-                    self.extend_list.pop(0)
+                    print(2)
+                    print(self.extend_list.pop(0))
 
             self.extend_list.append(element)
+            print(element)
             return True
-        except Exception:
+        except Exception as err:
+            print(err)
             return False
 
     def __call__(self):
@@ -30,22 +34,6 @@ class ExtendedList:
 
     def __str__(self) -> str:
         return str(self.extend_list)
-
-
-def get_random_track(
-    tracks: List[nextwave.YouTubeTrack], extended: ExtendedList
-) -> nextwave.YouTubeTrack:
-    for song in tracks:
-        if song.identifier in extended():
-            tracks.remove(song)
-
-    try:
-        track = random.choice(tracks)
-    except Exception as err:
-        print(err)
-    else:
-        extended.add(track.identifier)
-        return track
 
 
 class Player(commands.Cog):
@@ -56,6 +44,24 @@ class Player(commands.Cog):
 
         self.playlist = None
         self.extended = ExtendedList(5)
+
+    def get_random_track(
+        self,
+        tracks: List[nextwave.YouTubeTrack],
+    ) -> nextwave.YouTubeTrack:
+        tracks = tracks.copy()
+        for song in tracks:
+            if song.identifier in self.extended():
+                tracks.remove(song)
+
+        try:
+            track = random.choice(tracks)
+        except Exception as err:
+            print(err)
+        else:
+            self.extended.add(track.identifier)
+            print(self.extended)
+            return track
 
     async def get_playlist(self) -> nextwave.YouTubePlaylist:
         if self.playlist is None:
@@ -121,9 +127,8 @@ stoped!"
 
     async def play_mus(self, player: nextwave.Player):
         playlist = await self.get_playlist()
-        track = get_random_track(
+        track = self.get_random_track(
             playlist.tracks,
-            self.extended,
         )
         print(
             f"{player.guild.name}:{player.guild.id} started {track.title}, \
