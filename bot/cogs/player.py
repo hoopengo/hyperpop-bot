@@ -17,7 +17,7 @@ class ExtendedList:
     def add(self, element) -> bool:
         try:
             if len(self.extend_list) >= self.size:
-                for _ in range(0, len(self.extend_list) - self.size):
+                for _ in range(0, len(self.extend_list) - self.size + 1):
                     self.extend_list.pop(-1)
 
             self.extend_list.append(element)
