@@ -65,8 +65,16 @@ class Player(commands.Cog):
     ):
         if member.id == self.bot.user.id:
             if after.channel is None:
-                await member.guild.voice_client.stop()
-                await member.guild.voice_client.disconnect()
+                try:
+                    await member.guild.voice_client.stop()
+                    await member.guild.voice_client.disconnect()
+                except Exception:
+                    pass
+
+                print(
+                    f"{member.guild.name}:{member.guild.id} player has been\
+stoped!"
+                )
 
     async def connect_nodes(self):
         """Connect to our Lavalink nodes."""
@@ -94,7 +102,10 @@ class Player(commands.Cog):
         playlist = await nextwave.YouTubeTrack.search(query=PLAYLIST_URL)
 
         track = get_random_track(playlist.tracks, self.extended)
-        print(track.title, track.uri)
+        print(
+            f"{player.guild.name}:{player.guild.id} started {track.title}, \
+{track.uri}"
+        )
 
         try:
             await player.play(track)
@@ -167,8 +178,11 @@ class Player(commands.Cog):
                 )
             )
 
-        await interaction.guild.voice_client.stop()
-        await interaction.guild.voice_client.disconnect()
+        try:
+            await interaction.guild.voice_client.stop()
+            await interaction.guild.voice_client.disconnect()
+        except Exception:
+            pass
 
         await interaction.send(
             embed=nextcord.Embed(
