@@ -1,5 +1,5 @@
 import asyncio
-from random import randint
+import random
 from typing import List
 
 import nextcord
@@ -39,15 +39,13 @@ def get_random_track(
         if song.identifier in extended():
             tracks.remove(song)
 
-    track_number = randint(0, len(tracks) - 1)
     try:
-        track = tracks[track_number]
+        track = random.choice(tracks)
     except Exception as err:
         print(err)
-
-    extended.add(track.identifier)
-
-    return track
+    else:
+        extended.add(track.identifier)
+        return track
 
 
 class Player(commands.Cog):
