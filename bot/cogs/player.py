@@ -17,7 +17,8 @@ class ExtendedList:
     def add(self, element) -> bool:
         try:
             if len(self.extend_list) >= self.size:
-                self.extend_list.pop(-1)
+                for _ in range(0, len(self.extend_list) - self.size):
+                    self.extend_list.pop(-1)
 
             self.extend_list.append(element)
             return True
@@ -35,7 +36,7 @@ def get_random_track(
     tracks: List[nextwave.YouTubeTrack], extended: ExtendedList
 ) -> nextwave.YouTubeTrack:
     for song in tracks:
-        if song.id in extended():
+        if song.identifier in extended():
             tracks.remove(song)
 
     track_number = randint(0, len(tracks) - 1)
@@ -44,7 +45,7 @@ def get_random_track(
     except Exception as err:
         print(err)
 
-    extended.add(track.id)
+    extended.add(track.identifier)
 
     return track
 
@@ -54,7 +55,20 @@ class Player(commands.Cog):
         self.bot = client
 
         self.bot.loop.create_task(self.connect_nodes())
-        self.extended = ExtendedList(15)
+
+        self.playlist = None
+        self.extended = ExtendedList(5)
+
+    async def get_playlist(self) -> nextwave.YouTubePlaylist:
+        if self.playlist is None:
+            self.playlist = await nextwave.YouTubeTrack.search(
+                query=PLAYLIST_URL,
+            )
+            playlist_lenght = len(self.playlist.tracks)
+
+            self.extended = ExtendedList(int(playlist_lenght // 1.5))
+
+        return self.playlist
 
     @commands.Cog.listener()
     async def on_voice_state_update(
@@ -108,10 +122,11 @@ stoped!"
         await self.play_mus(player)
 
     async def play_mus(self, player: nextwave.Player):
-        playlist: nextwave.YouTubePlaylist
-        playlist = await nextwave.YouTubeTrack.search(query=PLAYLIST_URL)
-
-        track = get_random_track(playlist.tracks, self.extended)
+        playlist = await self.get_playlist()
+        track = get_random_track(
+            playlist.tracks,
+            self.extended,
+        )
         print(
             f"{player.guild.name}:{player.guild.id} started {track.title}, \
 {track.uri}"
