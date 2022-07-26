@@ -148,10 +148,13 @@ stoped!"
             return await inter.send(embed=emb)
 
         if not inter.guild.voice_client:
-            vp: nextwave.Player = await inter.user.voice.channel.connect(
-                cls=nextwave.Player,
-                reconnect=True,
-            )
+            try:
+                vp: nextwave.Player = await inter.user.voice.channel.connect(
+                    cls=nextwave.Player,
+                    reconnect=True,
+                )
+            except Exception:
+                await inter.send("❌ Бот не может подключится к этому каналу!")
 
             await inter.send(
                 embed=nextcord.Embed(
@@ -163,9 +166,12 @@ stoped!"
             await self.play_mus(vp)
 
         else:
-            await inter.guild.voice_client.move_to(
-                inter.user.voice.channel,
-            )
+            try:
+                await inter.guild.voice_client.move_to(
+                    inter.user.voice.channel,
+                )
+            except Exception:
+                await inter.send("❌ Бот не может подключится к этому каналу!")
 
     @application_checks.has_guild_permissions(administrator=True)
     @nextcord.slash_command(name="leave", description="Бот выходит из канала")
