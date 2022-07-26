@@ -17,16 +17,13 @@ class ExtendedList:
     def add(self, element) -> bool:
         try:
             if len(self.extend_list) >= self.size:
-                print(1)
                 for _ in range(0, len(self.extend_list) - self.size + 1):
-                    print(2)
-                    print(self.extend_list.pop(0))
+                    self.extend_list.pop(0)
 
             self.extend_list.append(element)
-            print(element)
             return True
         except Exception as err:
-            print(err)
+            print(f'Handled error while adding new element: {err}')
             return False
 
     def __call__(self):
