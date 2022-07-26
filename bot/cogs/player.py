@@ -1,3 +1,4 @@
+import asyncio
 from random import randint
 from typing import List
 
@@ -34,7 +35,7 @@ def get_random_track(
     tracks: List[nextwave.YouTubeTrack], extended: ExtendedList
 ) -> nextwave.YouTubeTrack:
     for song in tracks:
-        if song in extended():
+        if song.id in extended():
             tracks.remove(song)
 
     track_number = randint(0, len(tracks) - 1)
@@ -43,7 +44,7 @@ def get_random_track(
     except Exception as err:
         print(err)
 
-    extended.add(track)
+    extended.add(track.id)
 
     return track
 
@@ -54,6 +55,18 @@ class Player(commands.Cog):
 
         self.bot.loop.create_task(self.connect_nodes())
         self.extended = ExtendedList(15)
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(
+        self,
+        member: nextcord.Member,
+        before: nextcord.VoiceState,
+        after: nextcord.VoiceState,
+    ):
+        if member.id == self.bot.user.id:
+            if after.channel is None:
+                await member.guild.voice_client.stop()
+                await member.guild.voice_client.disconnect()
 
     async def connect_nodes(self):
         """Connect to our Lavalink nodes."""
@@ -77,22 +90,42 @@ class Player(commands.Cog):
         await self.play_mus(player)
 
     async def play_mus(self, player: nextwave.Player):
-        if not player.is_playing():
-            playlist: nextwave.YouTubePlaylist
-            playlist = await nextwave.YouTubeTrack.search(query=PLAYLIST_URL)
+        playlist: nextwave.YouTubePlaylist
+        playlist = await nextwave.YouTubeTrack.search(query=PLAYLIST_URL)
 
-            track = get_random_track(playlist.tracks, self.extended)
-            print(track.title, track.uri)
+        track = get_random_track(playlist.tracks, self.extended)
+        print(track.title, track.uri)
 
-            try:
-                await player.play(track)
-            except Exception as err:
-                print(err)
+        try:
+            await player.play(track)
+        except Exception as err:
+            print(err)
+            await self.play_mus(player)
 
     @commands.Cog.listener()
     async def on_nextwave_node_ready(self, node: nextwave.Node):
         """Event fired when a node has finished connecting."""
         print(f"Node: <{node.identifier}> is ready!")
+
+    @commands.Cog.listener()
+    async def on_wavelink_track_stuck(
+        self,
+        player: nextwave.Player,
+        track: nextwave.Track,
+        threshold,
+    ):
+        await asyncio.sleep(60)
+        await self.play_mus(player)
+
+    @commands.Cog.listener()
+    async def on_wavelink_track_exception(
+        self,
+        player: nextwave.Player,
+        track: nextwave.Track,
+        exception,
+    ):
+        await asyncio.sleep(60)
+        await self.play_mus(player)
 
     @application_checks.has_guild_permissions(administrator=True)
     @nextcord.slash_command(name="join", description="Бот начинает играть")
