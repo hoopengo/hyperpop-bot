@@ -89,7 +89,12 @@ stoped!"
         )
 
     @commands.Cog.listener()
-    async def on_wavelink_websocket_closed(self, player: nextwave.Player, reason, code):
+    async def on_nextwave_websocket_closed(
+        self,
+        player: nextwave.Player,
+        reason,
+        code,
+    ):
         await asyncio.sleep(60)
         await self.play_mus(player)
 
