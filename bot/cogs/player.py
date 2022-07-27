@@ -254,6 +254,52 @@ stoped!"
             )
         )
 
+    @application_checks.has_guild_permissions(administrator=True)
+    @nextcord.slash_command(name="pause", description="Бот паузит трек")
+    async def _pause(self, interaction: nextcord.Interaction):
+        if interaction.guild.voice_client is None:
+            return await interaction.send(
+                embed=nextcord.Embed(
+                    description="❌ Бот не проигрывает музыку!",
+                    color=0xB53737,
+                )
+            )
+
+        try:
+            await interaction.guild.voice_client.pause()
+        except Exception as err:
+            print(err)
+
+        await interaction.send(
+            embed=nextcord.Embed(
+                description="📻 Песня была поставлена на паузу!",
+                color=0xB53737,
+            )
+        )
+
+    @application_checks.has_guild_permissions(administrator=True)
+    @nextcord.slash_command(name="resume", description="Бот продолжает трек")
+    async def _resume(self, interaction: nextcord.Interaction):
+        if interaction.guild.voice_client is None:
+            return await interaction.send(
+                embed=nextcord.Embed(
+                    description="❌ Бот не проигрывает музыку!",
+                    color=0xB53737,
+                )
+            )
+
+        try:
+            await interaction.guild.voice_client.resume()
+        except Exception as err:
+            print(err)
+
+        await interaction.send(
+            embed=nextcord.Embed(
+                description="📻 Песня была востановлена!",
+                color=0xB53737,
+            )
+        )
+
     @tasks.loop(minutes=2)
     async def _playlist_update_loop(self):
         self.playlist = await self._parse_playlist()
