@@ -49,13 +49,13 @@ class Player(commands.Cog):
         self,
         tracks: List[nextwave.YouTubeTrack],
     ) -> nextwave.YouTubeTrack:
-        tracks = tracks.copy()
-        for song in tracks:
+        songs = tracks.copy()
+        for v, song in enumerate(songs):
             if song.identifier in self.extended():
-                tracks.remove(song)
+                songs.pop(v)
 
         try:
-            track = random.choice(tracks)
+            track = random.choice(songs)
         except Exception as err:
             print(err)
         else:
