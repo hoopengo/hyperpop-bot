@@ -4,7 +4,7 @@ from typing import List
 
 import nextcord
 import nextwave
-from nextcord.ext import application_checks, commands
+from nextcord.ext import application_checks, commands, tasks
 
 from ..config import PLAYLIST_URL
 
@@ -63,14 +63,19 @@ class Player(commands.Cog):
             print(self.extended)
             return track
 
+    async def _parse_playlist(self):
+        playlist = await nextwave.YouTubeTrack.search(
+            query=PLAYLIST_URL,
+        )
+        playlist_lenght = len(playlist.tracks)
+
+        self.extended = ExtendedList(int(playlist_lenght // 1.5))
+        return playlist
+
     async def _get_playlist(self) -> nextwave.YouTubePlaylist:
         if self.playlist is None:
-            self.playlist = await nextwave.YouTubeTrack.search(
-                query=PLAYLIST_URL,
-            )
-            playlist_lenght = len(self.playlist.tracks)
-
-            self.extended = ExtendedList(int(playlist_lenght // 1.5))
+            self.playlist = await self._parse_playlist()
+            self._playlist_update_loop.start()
 
         return self.playlist
 
@@ -224,6 +229,10 @@ stoped!"
                 color=0xB53737,
             )
         )
+
+    @tasks.loop(minutes=2)
+    async def _playlist_update_loop(self):
+        self.playlist = await self._parse_playlist()
 
 
 def setup(client: commands.Bot):
