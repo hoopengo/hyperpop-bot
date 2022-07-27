@@ -40,12 +40,12 @@ class Player(commands.Cog):
     def __init__(self, client: commands.Bot):
         self.bot = client
 
-        self.bot.loop.create_task(self.connect_nodes())
+        self.bot.loop.create_task(self._connect_nodes())
 
         self.playlist = None
         self.extended = ExtendedList(5)
 
-    def get_random_track(
+    def _get_random_track(
         self,
         tracks: List[nextwave.YouTubeTrack],
     ) -> nextwave.YouTubeTrack:
@@ -63,7 +63,7 @@ class Player(commands.Cog):
             print(self.extended)
             return track
 
-    async def get_playlist(self) -> nextwave.YouTubePlaylist:
+    async def _get_playlist(self) -> nextwave.YouTubePlaylist:
         if self.playlist is None:
             self.playlist = await nextwave.YouTubeTrack.search(
                 query=PLAYLIST_URL,
@@ -94,7 +94,7 @@ class Player(commands.Cog):
 stoped!"
                 )
 
-    async def connect_nodes(self):
+    async def _connect_nodes(self):
         """Connect to our Lavalink nodes."""
         await self.bot.wait_until_ready()
 
@@ -114,7 +114,7 @@ stoped!"
         code,
     ):
         await asyncio.sleep(60)
-        await self.play_mus(player)
+        await self._play_music(player)
 
     @commands.Cog.listener()
     async def on_nextwave_track_end(
@@ -123,11 +123,11 @@ stoped!"
         track: nextwave.Track,
         reason: str,
     ):
-        await self.play_mus(player)
+        await self._play_music(player)
 
-    async def play_mus(self, player: nextwave.Player):
-        playlist = await self.get_playlist()
-        track = self.get_random_track(
+    async def _play_music(self, player: nextwave.Player):
+        playlist = await self._get_playlist()
+        track = self._get_random_track(
             playlist.tracks,
         )
         print(
@@ -139,7 +139,7 @@ stoped!"
             await player.play(track)
         except Exception as err:
             print(err)
-            await self.play_mus(player)
+            await self._play_music(player)
 
     @commands.Cog.listener()
     async def on_nextwave_node_ready(self, node: nextwave.Node):
@@ -154,7 +154,7 @@ stoped!"
         threshold,
     ):
         await asyncio.sleep(60)
-        await self.play_mus(player)
+        await self._play_music(player)
 
     @commands.Cog.listener()
     async def on_wavelink_track_exception(
@@ -164,11 +164,11 @@ stoped!"
         exception,
     ):
         await asyncio.sleep(60)
-        await self.play_mus(player)
+        await self._play_music(player)
 
     @application_checks.has_guild_permissions(administrator=True)
     @nextcord.slash_command(name="join", description="Бот начинает играть")
-    async def join(self, inter: nextcord.Interaction):
+    async def _join(self, inter: nextcord.Interaction):
         if inter.user.voice is None:
             emb = nextcord.Embed(
                 description="❌ Вы не в голосовом канале!", color=0xB53737
@@ -191,7 +191,7 @@ stoped!"
                 )
             )
 
-            await self.play_mus(vp)
+            await self._play_music(vp)
 
         else:
             try:
@@ -203,7 +203,7 @@ stoped!"
 
     @application_checks.has_guild_permissions(administrator=True)
     @nextcord.slash_command(name="leave", description="Бот выходит из канала")
-    async def leave(self, interaction: nextcord.Interaction):
+    async def _leave(self, interaction: nextcord.Interaction):
         if interaction.guild.voice_client is None:
             return await interaction.send(
                 embed=nextcord.Embed(
@@ -226,5 +226,5 @@ stoped!"
         )
 
 
-def setup(client):
+def setup(client: commands.Bot):
     client.add_cog(Player(client))
