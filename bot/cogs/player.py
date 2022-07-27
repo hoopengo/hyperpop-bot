@@ -128,6 +128,7 @@ stoped!"
         track: nextwave.Track,
         reason: str,
     ):
+        print(reason)
         await self._play_music(player)
 
     async def _play_music(self, player: nextwave.Player):
@@ -226,6 +227,29 @@ stoped!"
         await interaction.send(
             embed=nextcord.Embed(
                 description="📻 Прослушивание приостановлено!",
+                color=0xB53737,
+            )
+        )
+
+    @application_checks.has_guild_permissions(administrator=True)
+    @nextcord.slash_command(name="skip", description="Бот скипает этот трек")
+    async def _skip(self, interaction: nextcord.Interaction):
+        if interaction.guild.voice_client is None:
+            return await interaction.send(
+                embed=nextcord.Embed(
+                    description="❌ Бот не проигрывает музыку!",
+                    color=0xB53737,
+                )
+            )
+
+        try:
+            await interaction.guild.voice_client.stop()
+        except Exception as err:
+            print(err)
+
+        await interaction.send(
+            embed=nextcord.Embed(
+                description="📻 Песня скипнута!",
                 color=0xB53737,
             )
         )
